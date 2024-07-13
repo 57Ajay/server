@@ -6,4 +6,4 @@ const asyncHandler = (fn: (arg0: Request, arg1: Response, arg2: NextFunction) =>
     } 
 };
 
-export {asyncHandler};
+export default asyncHandler;

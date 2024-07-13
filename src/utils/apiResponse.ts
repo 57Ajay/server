@@ -1,11 +1,12 @@
+import type { IUser, IUserMethods, UserModel } from "../models/user.model";
 class ApiResponse{
     message: string;
-    data: [];
+    data: IUser | UserModel | IUserMethods;
     statuscode: number;
     success: boolean;
     constructor(
         message = "successful",
-        data: [],
+        data: IUser | UserModel| IUserMethods,
         statuscode: number,
     ){
         this.message = message;
