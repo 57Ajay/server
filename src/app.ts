@@ -5,8 +5,13 @@ import userRouter from "./routes/user.routs";
 import productRouter from "./routes/product.routs";
 import type { Request, Response, NextFunction } from 'express';
 import ApiResponse from './utils/apiResponse';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
+
+app.use(cookieParser());
 
 app.use(cors(
     {
@@ -19,11 +24,6 @@ app.use(express.urlencoded({
     extended: true,
     limit: '50kb'
 }));
-
-app.use((req, res, next) => {
-    console.log('Request Body:', req.body);
-    next();
-});
 
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -46,6 +46,6 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/products", productRouter);
 
 
-app.use(cookieParser());
+
 
 export {app};
