@@ -33,6 +33,7 @@ const registerUser = asyncHandler(async(req, res)=>{
     if (existedUser) {
         throw new ApiError("User already exists", 409);
     };
+
     const user = await User.create({username, password, fullName, email, age});
     const newUser: any = await User.findById(user._id).select("-password -refreshToken");
     return res.status(201).json(
@@ -40,11 +41,24 @@ const registerUser = asyncHandler(async(req, res)=>{
     );
 });
 
-    
+const getUserByUsername = asyncHandler(async (req, res, next) => {
+    const { username } = req.params;
+    console.log('Searching for username:', username);
+
+    const user = await User.findOne({ username }).select('-password -refreshToken');
+    console.log('Database query result:', user);
+
+    if (!user) {
+        console.log('User not found in database');
+        throw new ApiError("User not found", 404);
+    }
+
+    console.log('User found, sending response');
+    res.status(200).json(new ApiResponse("User found", user, 200));
+});
 
 
 
 
 
-
-export { generateAccessAndRefreshToken, registerUser };
+export { generateAccessAndRefreshToken, registerUser, getUserByUsername };
