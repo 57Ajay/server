@@ -2,6 +2,7 @@ import { User } from "../models/user.model";
 import ApiError from "../utils/apiError";
 import asyncHandler from "../utils/asyncHandler";
 import ApiResponse from "../utils/apiResponse";
+import jwt from "jsonwebtoken";
 
 
 const generateAccessAndRefreshToken = async (userId: any) => {
@@ -156,6 +157,57 @@ const updateEmail = asyncHandler(async(req, res)=>{
     );
 });
 
+interface JwtPayload {
+  _id: string;
+  [key: string]: any;
+}
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError("Refresh token not provided", 401);
+  }
 
-export { generateAccessAndRefreshToken, registerUser, getUserByUsername, loginUser, logOutUser, updatePassword, updateEmail };
+  try {
+    if (!process.env.REFRESH_TOKEN_SECRET) {
+      throw new ApiError("Refresh token secret not provided", 500);
+    }
+
+    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET) as JwtPayload;
+    
+    const user = await User.findById(decodedToken._id).select("-password -refreshToken");
+
+    if (!user) {
+      throw new ApiError("User not found or Invalid Token", 404);
+    }
+
+    if (user.refreshToken !== incomingRefreshToken) {
+      throw new ApiError("RefreshToken is Expired or used", 401);
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+      })
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      })
+      .json(
+        new ApiResponse("Access token refreshed successfully", { accessToken, refreshToken }, 200)
+      );
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      throw new ApiError("Invalid refresh token", 401);
+    }
+    throw new ApiError("Error refreshing access token", 500);
+  }
+});
+
+export { generateAccessAndRefreshToken, registerUser, getUserByUsername, loginUser, logOutUser, updatePassword, updateEmail, refreshAccessToken };
