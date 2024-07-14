@@ -136,4 +136,26 @@ const updatePassword = asyncHandler(async(req, res)=>{
 
 });
 
-export { generateAccessAndRefreshToken, registerUser, getUserByUsername, loginUser, logOutUser, updatePassword };
+const updateEmail = asyncHandler(async(req, res)=>{
+    const { currentEmail, newEmail } = req.body;
+    if (!currentEmail || !newEmail) {
+        throw new ApiError("Please provide current email and new email", 400);
+    };
+    if(currentEmail === newEmail){
+        throw new ApiError("New email cannot be the same as current email", 400);
+    };
+    
+    const user = await User.findById(req.user?._id);
+    if (!user) {
+        throw new ApiError("User not found", 404);
+    };
+    user.email = newEmail;
+    await user.save({validateBeforeSave: false});
+    return res.status(200).json(
+        new ApiResponse("Email updated successfully", null, 200)
+    );
+});
+
+
+
+export { generateAccessAndRefreshToken, registerUser, getUserByUsername, loginUser, logOutUser, updatePassword, updateEmail };
